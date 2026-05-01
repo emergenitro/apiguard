@@ -1,0 +1,9 @@
+tests/
+*.test.js
+*.spec.js
+.apiguard.json
+.vscode/
+.idea/
+*.log
+openapi.json
+openapi.yaml
