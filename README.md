@@ -5,7 +5,7 @@ Auto-detect API routes across frameworks and generate OpenAPI docs with zero con
 ## Install
 
 ```bash
-npm install -D apiguard
+npm install -D apiguard-cli
 ```
 
 ## Commands
@@ -172,7 +172,7 @@ All fields except `excluded` are optional. Without them, `generate` defaults to 
 ## Programmatic API
 
 ```js
-const { scanWorkspace, scanFile, detectFrameworks } = require('apiguard');
+const { scanWorkspace, scanFile, detectFrameworks } = require('apiguard-cli');
 
 // Scan everything
 const routes = await scanWorkspace('/path/to/project');
