@@ -1,6 +1,6 @@
 {
   "name": "apiguard-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Auto-detect and visualize API routes across frameworks. Generate OpenAPI docs with zero config.",
   "main": "src/scanner/index.js",
   "bin": {
