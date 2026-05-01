@@ -1,6 +1,6 @@
 {
   "name": "apiguard-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Auto-detect and visualize API routes across frameworks. Generate OpenAPI docs with zero config.",
   "main": "src/scanner/index.js",
   "bin": {
@@ -15,7 +15,16 @@
     "test": "node tests/smoke.js",
     "prepare": "node -e \"require('./src/scanner/index.js'); require('./src/commands/generate.js'); console.log('apiguard ok')\""
   },
-  "keywords": ["api", "routes", "openapi", "cli", "express", "nextjs", "flask", "fastapi"],
+  "keywords": [
+    "api",
+    "routes",
+    "openapi",
+    "cli",
+    "express",
+    "nextjs",
+    "flask",
+    "fastapi"
+  ],
   "author": "Karthik Sankar",
   "license": "MIT",
   "engines": {
