@@ -46,7 +46,7 @@ async function scanFile(workspaceRoot, filePath) {
 
     let routes = [];
     if (framework === 'nextjs')  routes = await scanSingleFileNextjs(filePath, rootDir);
-    if (framework === 'flask')   routes = await scanSingleFileFlask(filePath);
+    if (framework === 'flask')   routes = await scanSingleFileFlask(filePath, rootDir);
     if (framework === 'fastapi') routes = await scanSingleFileFastAPI(filePath);
     if (framework === 'express') routes = await scanSingleFileExpress(filePath, rootDir);
     all.push(...routes);
