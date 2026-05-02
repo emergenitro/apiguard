@@ -1,6 +1,22 @@
-# apiguard
+<div align="center">
 
-Auto-detect API routes across frameworks and generate OpenAPI docs with zero config. No annotations, no decorators, no setup file — just point it at your project.
+<h1>apiguard-cli</h1>
+
+<p>Auto-generate OpenAPI specs from your source code.<br>No annotations. No decorators. No config. Just point it at your project.</p>
+
+<p>
+  <a href="https://www.npmjs.com/package/apiguard-cli"><img src="https://img.shields.io/npm/v/apiguard-cli?style=flat-square&color=crimson" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/apiguard-cli"><img src="https://img.shields.io/npm/dm/apiguard-cli?style=flat-square&color=orange" alt="npm downloads" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/npm/l/apiguard-cli?style=flat-square&color=blue" alt="license" /></a>
+</p>
+
+</div>
+
+---
+
+## Why
+
+Writing OpenAPI specs by hand is tedious. Littering your codebase with decorators just to get docs is messy. `apiguard-cli` scans your existing source files, detects your framework, and spits out a complete OpenAPI spec without touching a single line of your code.
 
 ## Install
 
@@ -8,74 +24,28 @@ Auto-detect API routes across frameworks and generate OpenAPI docs with zero con
 npm install -D apiguard-cli
 ```
 
-## Commands
-
-### `apiguard generate`
-
-Scans your project and writes an OpenAPI spec.
+## Quick start
 
 ```bash
-npx apiguard generate                        # → openapi.json
-npx apiguard generate --format yaml          # → openapi.yaml
-npx apiguard generate -o docs/api.json       # custom output path
-npx apiguard generate --dry-run              # print to stdout, don't write
-npx apiguard generate -r ./packages/api      # custom workspace root
-```
-
-| Flag | Default | Description |
-|---|---|---|
-| `-o, --output <path>` | `openapi.json` / `openapi.yaml` | Output file path |
-| `-f, --format <format>` | `json` | `json` or `yaml` |
-| `--dry-run` | — | Print to stdout instead of writing a file |
-| `-r, --root <path>` | `cwd` | Workspace root to scan |
-
----
-
-### `apiguard list`
-
-Lists every detected route grouped by framework, with colour-coded methods. Shows which routes are currently excluded.
-
-```bash
-npx apiguard list
-npx apiguard list -r ./packages/api
-```
-
----
-
-### `apiguard exclude <route>`
-
-Adds a route to the exclusion list in `.apiguard.json`. Excluded routes are hidden from `generate` output.
-
-```bash
-npx apiguard exclude "GET /api/internal/health"
+npx apiguard generate                     # → openapi.json
+npx apiguard generate --format yaml       # → openapi.yaml
+npx apiguard generate -o docs/api.json    # custom output path
+npx apiguard generate --dry-run           # print to stdout, don't write
+npx apiguard list                         # see all detected routes
 npx apiguard exclude "DELETE /api/admin/reset"
-```
-
----
-
-### `apiguard include <route>`
-
-Re-includes a previously excluded route.
-
-```bash
 npx apiguard include "GET /api/internal/health"
 ```
 
----
-
 ## Supported frameworks
 
-| Framework | Detection | Route extraction | Body schema | Query params | Response shapes |
-|---|---|---|---|---|---|
-| **Next.js App Router** | `package.json` | `app/**/route.ts` exported functions | Zod · FormData · destructuring | `searchParams.get()` · destructured searchParams | All status codes with descriptions |
-| **Next.js Pages Router** | `package.json` | `pages/api/**` default exports | — | — | — |
-| **Express** | `package.json` | AST (`app.get`, `router.post`, chained `.route()`) | Zod · destructuring | `req.query.x` · `const { x } = req.query` | All status codes with descriptions |
-| **Flask** | `requirements.txt` / `pyproject.toml` | `@bp.route` · `@bp.get` decorators + **Blueprint prefix resolution** | Pydantic · `request.get_json()` | `request.args.get()` · `request.args['key']` | — |
-| **FastAPI** | `requirements.txt` / `pyproject.toml` | `@router.get` / `@router.post` decorators | Pydantic · body usage | Typed function params | — |
+| Framework | Routes | Body schemas | Query params | Response shapes |
+|---|---|---|---|---|
+| **Next.js** (App + Pages Router) | ✅ | Zod · FormData · destructuring | ✅ | ✅ All status codes |
+| **Express** | ✅ | Zod · destructuring | ✅ | ✅ All status codes |
+| **Flask** | ✅ + Blueprint prefix resolution | Pydantic · `request.get_json()` | ✅ | — |
+| **FastAPI** | ✅ | Pydantic · body usage | ✅ Typed params | — |
 
-> Flask and FastAPI body/query inference requires **Python 3** on your `PATH`. Routes are still detected without it — just without schema info.
-
----
+> Flask and FastAPI schema inference requires **Python 3** on your `PATH`. Routes are still detected without it — just without schema info.
 
 ## What gets inferred
 
@@ -89,48 +59,31 @@ npx apiguard include "GET /api/internal/health"
 | `req.body` destructuring | Medium | `const { name, email } = req.body` |
 | `request.get_json()` usage | Medium | `data = request.get_json(); data['name']` |
 
-FormData fields detected via `.get('key')` get `multipart/form-data` as the OpenAPI content type. `.getAll('key')` fields are typed as `string[]`.
-
-### Query params
-
-| Pattern | Framework |
-|---|---|
-| `searchParams.get('q')` | Next.js App Router |
-| `const { page } = searchParams` | Next.js |
-| `const { searchParams } = request.nextUrl` | Next.js |
-| `req.query.page` · `req.query['page']` | Express |
-| `const { page, limit } = req.query` | Express |
-| `request.args.get('q')` · `request.args['q']` | Flask |
-| Typed function params: `def search(q: str, limit: int = 10):` | FastAPI |
+FormData fields detected via `.get('key')` get `multipart/form-data` as the content type. `.getAll('key')` fields are typed as `string[]`.
 
 ### Response shapes
 
-Multiple status codes are detected per handler. For each `Response.json()`, `NextResponse.json()`, `res.json()`, or `new Response(JSON.stringify(...), { status })` call, apiguard extracts:
+Multiple status codes are detected per handler. For each `Response.json()`, `NextResponse.json()`, `res.json()`, or `new Response(JSON.stringify(...), { status })` call, apiguard extracts the status code, the response shape, and the description when the message is a string literal.
 
-- The **status code** from the second argument
-- The **response shape** (field names and types)  
-- The **description** when the message is a string literal (e.g. `{ error: 'Unauthorized' }` → description: `"Unauthorized"`)
-- **Examples** for each string literal field
-
-This means an endpoint like:
+So this:
 
 ```ts
 return NextResponse.json({ error: 'Not found' }, { status: 404 });
 return NextResponse.json({ message: 'Created' }, { status: 201 });
 ```
 
-Produces two separate response entries in the OpenAPI output with the correct descriptions.
+Produces two separate response entries in the OpenAPI output with the correct descriptions and shapes.
 
-### Flask Blueprint prefixes
+### Flask Blueprint prefix resolution
 
-apiguard pre-scans all Python files to resolve Blueprint URL prefixes — including nested blueprints:
+apiguard pre-scans all Python files to resolve Blueprint URL prefixes, including nested chains of arbitrary depth:
 
 ```python
 # events.py
 events_bp = Blueprint("events_bp", __name__, url_prefix="/events")
 
 @events_bp.route("/verify", methods=["POST"])
-def verify():  ...
+def verify(): ...
 # → POST /events/verify ✓
 ```
 
@@ -141,13 +94,11 @@ app.register_blueprint(api_bp, url_prefix="/api")
 # v1_bp routes → /api/v1/... ✓
 ```
 
-Prefixes from `register_blueprint()` override inline `url_prefix` when both are present, matching Flask's actual behaviour. Chains of arbitrary depth are resolved iteratively.
-
----
+Prefixes from `register_blueprint()` override inline `url_prefix` when both are present, matching Flask's actual behaviour.
 
 ## Config file
 
-`.apiguard.json` lives in your project root and is committed to source control. It stores the exclusion list plus optional OpenAPI metadata that gets written into the generated spec.
+`.apiguard.json` lives at your project root and is committed to source control. It stores the exclusion list plus optional OpenAPI metadata written into the generated spec.
 
 ```json
 {
@@ -166,8 +117,6 @@ Prefixes from `register_blueprint()` override inline `url_prefix` when both are 
 ```
 
 All fields except `excluded` are optional. Without them, `generate` defaults to `title: "API"` and `version: "1.0.0"`.
-
----
 
 ## Programmatic API
 
@@ -198,18 +147,13 @@ Each route object looks like:
     path:  [{ name: 'id', type: 'string' }],
     query: [{ name: 'page', type: 'string' }],
     body:  {
-      source: 'zod',           // 'zod' | 'pydantic' | 'formdata' | 'destructure' | 'none'
+      source: 'zod',  // 'zod' | 'pydantic' | 'formdata' | 'destructure' | 'none'
       fields: [
         { name: 'email', type: 'string', required: true, confidence: 'high' }
       ]
     }
   },
-  response: {                  // primary (200) response
-    shape:      [{ name: 'id', type: 'string', required: true, confidence: 'low' }],
-    confidence: 'low',
-    source:     'literal'
-  },
-  responses: [                 // all detected status codes
+  responses: [
     { status: 200, shape: [...], description: 'User created' },
     { status: 400, shape: [...], description: 'Email already exists' },
     { status: 401, shape: [...], description: 'Unauthorized' }
@@ -217,42 +161,48 @@ Each route object looks like:
 }
 ```
 
----
+## CLI reference
+
+### `apiguard generate`
+
+| Flag | Default | Description |
+|---|---|---|
+| `-o, --output <path>` | `openapi.json` / `openapi.yaml` | Output file path |
+| `-f, --format <format>` | `json` | `json` or `yaml` |
+| `--dry-run` | — | Print to stdout instead of writing a file |
+| `-r, --root <path>` | `cwd` | Workspace root to scan |
+
+### `apiguard list`
+
+Lists every detected route grouped by framework with colour-coded HTTP methods. Shows which routes are currently excluded.
+
+```bash
+npx apiguard list
+npx apiguard list -r ./packages/api
+```
+
+### `apiguard exclude / include`
+
+```bash
+npx apiguard exclude "DELETE /api/admin/reset"   # adds to .apiguard.json exclusion list
+npx apiguard include "DELETE /api/admin/reset"   # removes from exclusion list
+```
 
 ## Known limitations
 
-- **Flask/FastAPI router prefixes from `include_router` / `register_blueprint` at the app level** are resolved only when the call is visible in a `.py` file within the scanned workspace. Prefixes set outside the workspace (e.g. in a parent package) won't be picked up.
-- **Express router mounting** (`app.use('/api', router)`) isn't resolved — routes on that router show their bare paths. The path param and body inference still works, just without the mount prefix.
-- **Nested Pydantic/Zod schemas** aren't recursively expanded. A field typed as another model class shows the class name as its type.
-- **Dynamic route paths** built from variables at runtime can't be statically detected.
-- **TypeScript generics and conditional types** in response shapes aren't resolved — the type shows as `unknown`.
+- **Express router mounting** (`app.use('/api', router)`) isn't resolved — routes show their bare paths without the mount prefix.
+- **Nested Pydantic/Zod schemas** aren't recursively expanded. A field typed as another model shows the class name as its type.
+- **Flask/FastAPI prefixes set outside the scanned workspace** won't be picked up.
+- **Dynamic route paths** built from runtime variables can't be statically detected.
+- **TypeScript generics and conditional types** in response shapes resolve to `unknown`.
 
----
+The first two are actively being worked on.
 
-## Project structure
+## Contributing
 
-```
-apiguard/
-├── bin/
-│   └── apiguard.js          CLI entry point
-├── src/
-│   ├── config.js            .apiguard.json read/write
-│   ├── commands/
-│   │   ├── generate.js      apiguard generate
-│   │   ├── list.js          apiguard list
-│   │   ├── exclude.js       apiguard exclude
-│   │   └── include.js       apiguard include
-│   └── scanner/
-│       ├── index.js         orchestrator
-│       ├── detector.js      framework detection from manifests
-│       ├── nextjs.js        App Router + Pages Router
-│       ├── express.js       Express AST scanner
-│       ├── flask.js         Flask decorator scanner + Blueprint resolver
-│       ├── fastapi.js       FastAPI decorator scanner
-│       ├── schemaInfer.js   Zod / FormData / response inference
-│       ├── importResolver.js cross-file schema imports
-│       ├── pythonRunner.js  Python subprocess for Pydantic
-│       └── util.js          shared helpers
-└── resources/
-    └── inspector.py         Python AST inspector (Pydantic + query params)
-```
+Issues, framework requests, and detection pattern ideas are all welcome. If you find it useful, a ⭐ on the repo goes a long way!
+
+## Links
+
+- [npm](https://www.npmjs.com/package/apiguard-cli)
+- [GitHub](https://github.com/emergenitro/apiguard)
